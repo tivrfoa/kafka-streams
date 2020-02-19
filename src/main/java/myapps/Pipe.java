@@ -5,6 +5,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
@@ -28,7 +29,14 @@ public class Pipe {
 
         final StreamsBuilder builder = new StreamsBuilder();
         KStream<String, String> source = builder.stream(KAFKA_INPUT_TOPIC);
-        source.to(KAFKA_OUTPUT_TOPIC);
+        // source.to(KAFKA_OUTPUT_TOPIC);
+
+        source.map((k, v) -> KeyValue.pair(k, "Intercepted! " + v))
+                .to(KAFKA_OUTPUT_TOPIC);
+
+        KStream<String, Integer> transformed = source.map(
+                (key, value) -> KeyValue.pair(value.toLowerCase(), value.length()));
+        // transformed.to(KAFKA_OUTPUT_TOPIC);
 
         final Topology topology = builder.build();
         System.out.println(topology.describe());
